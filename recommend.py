@@ -39,6 +39,9 @@ def recommendSongs():
     recommendSongs = sorted(recommendedSongs, key=lambda x: x[similarity])
     top_n_recommendations = recommendedSongs[:5] #get the top 5
     
+    image_links = [song['image_link'] for song in top_n_recommendations]
+    response = requests.post('http://localhost:3000/result', json={'image_links': image_links})
+    
     return jsonify({'recommendations' : top_n_recommendations})
 
 def fetch_spotify_data(user_input, access_token):
