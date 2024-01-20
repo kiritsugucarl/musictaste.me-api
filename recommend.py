@@ -70,4 +70,4 @@ def fetch_track_features(track_id, access_token):
         return{}
     
     if __name__ == '__main__':
-        app.run(debug=True)
+        app.run(debug=True, port=5000)
