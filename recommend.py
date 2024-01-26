@@ -2,8 +2,8 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 import math
 
-recommend = Flask(__name__)
-CORS(recommend)
+app = Flask(__name__)
+CORS(app)
 
 SPOTIFY_CLIENT_ID = "76119cfba3a9409fbf5db1c44014b7b3"
 SPOTIFY_CLIENT_SECRET = "eaf50650429f46e0b42bffabc1c02666"
@@ -18,7 +18,7 @@ def calculate_similarity(user_profile, song_features):
         
     return math.sqrt(distance)
 
-@recommend.route('/music-taste', methods=['POST'])
+@app.route('/musicTasteRecommend', methods=['POST'])
 def recommendSongs():
     data = request.get_json()
     
@@ -40,7 +40,7 @@ def recommendSongs():
     top_n_recommendations = recommendedSongs[:5] #get the top 5
     
     image_links = [song['image_link'] for song in top_n_recommendations]
-    response = requests.post('http://localhost:3000/result', json={'image_links': image_links})
+    response = requests.post('http://localhost:3000/result/musicTaste', json={'image_links': image_links})
     
     return jsonify({'recommendations' : top_n_recommendations})
 
@@ -69,5 +69,5 @@ def fetch_track_features(track_id, access_token):
         print(f'Error fetching track features for {track_id}: {response.status_code}')
         return{}
     
-    if __name__ == '__main__':
-        app.run(debug=True, port=5000)
+if __name__ == '__main__':
+    app.run(debug=True, port=5000)
