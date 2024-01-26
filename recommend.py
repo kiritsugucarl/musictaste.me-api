@@ -3,7 +3,7 @@ from flask_cors import CORS
 import math
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, resources={r"/musicTasteRecommend": {"origins": "*"}})
 
 SPOTIFY_CLIENT_ID = "76119cfba3a9409fbf5db1c44014b7b3"
 SPOTIFY_CLIENT_SECRET = "eaf50650429f46e0b42bffabc1c02666"
@@ -20,29 +20,30 @@ def calculate_similarity(user_profile, song_features):
 
 @app.route('/musicTasteRecommend', methods=['POST'])
 def recommendSongs():
-    data = request.get_json()
-    
-    # Get user input
-    user_input = data.get('user_input', [])
-    
-    access_token = request.headers.get('Authorization', '').replace('Bearer ', '')
-    
-    user_profile = fetch_spotify_data(user_input, access_token)
-    
-    songs = []
-    
-    recommendedSongs = []
-    for song in songs:
-        similarity = calculate_similarity(user_profile, song['features'])
-        recommendedSongs.append({'name': song['name'], 'artist': song['artist'], 'similarity': similarity})
-    
-    recommendSongs = sorted(recommendedSongs, key=lambda x: x[similarity])
-    top_n_recommendations = recommendedSongs[:5] #get the top 5
-    
-    image_links = [song['image_link'] for song in top_n_recommendations]
-    response = requests.post('http://localhost:3000/result/musicTaste', json={'image_links': image_links})
-    
-    return jsonify({'recommendations' : top_n_recommendations})
+    if request.method == 'POST':
+        data = request.get_json()
+        
+        # Get user input
+        user_input = data.get('user_input', [])
+        
+        access_token = request.headers.get('Authorization', '').replace('Bearer ', '')
+        
+        user_profile = fetch_spotify_data(user_input, access_token)
+        
+        songs = []
+        
+        recommendedSongs = []
+        for song in songs:
+            similarity = calculate_similarity(user_profile, song['features'])
+            recommendedSongs.append({'name': song['name'], 'artist': song['artist'], 'similarity': similarity})
+        
+        recommendSongs = sorted(recommendedSongs, key=lambda x: x[similarity])
+        top_n_recommendations = recommendedSongs[:5] #get the top 5
+        
+        image_links = [song['image_link'] for song in top_n_recommendations]
+        response = requests.post('http://localhost:3000/result/musicTaste', json={'image_links': image_links})
+        
+        return jsonify({'recommendations' : top_n_recommendations})
 
 def fetch_spotify_data(user_input, access_token):
     # SPOTIFY API GOES HERE
