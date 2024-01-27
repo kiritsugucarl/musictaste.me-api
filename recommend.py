@@ -1,9 +1,10 @@
 from flask import Flask, request, jsonify
-from flask_cors import CORS
+from flask_cors import CORS, cross_origin
 import math
+import axios
 
 app = Flask(__name__)
-CORS(app, resources={r"/musicTasteRecommend": {"origins": "*"}})
+CORS(app, resources={r"/musicTasteRecommend": {"origins": "*", "allow_credentials": True}})
 
 SPOTIFY_CLIENT_ID = "76119cfba3a9409fbf5db1c44014b7b3"
 SPOTIFY_CLIENT_SECRET = "eaf50650429f46e0b42bffabc1c02666"
@@ -18,7 +19,8 @@ def calculate_similarity(user_profile, song_features):
         
     return math.sqrt(distance)
 
-@app.route('/musicTasteRecommend', methods=['POST'])
+@app.route('/musicTasteRecommend', methods=['POST', 'OPTIONS'])
+@cross_origin(supports_credentials=True)
 def recommendSongs():
     if request.method == 'POST':
         data = request.get_json()
@@ -41,9 +43,15 @@ def recommendSongs():
         top_n_recommendations = recommendedSongs[:5] #get the top 5
         
         image_links = [song['image_link'] for song in top_n_recommendations]
-        response = requests.post('http://localhost:3000/result/musicTaste', json={'image_links': image_links})
+        response = axios.post('http://localhost:3000/result/musicTaste', json={'image_links': image_links})
         
-        return jsonify({'recommendations' : top_n_recommendations})
+        response = jsonify({'recommendations' : top_n_recommendations})
+    
+        # Add CORS headers
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
+        response.headers['Access-Control-Allow-Methods'] = 'POST'
+        
+        return response
 
 def fetch_spotify_data(user_input, access_token):
     # SPOTIFY API GOES HERE
