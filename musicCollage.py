@@ -1,4 +1,4 @@
-from flask import Flask, request, send_file
+from flask import Flask, request, send_file, jsonify
 from PIL import Image
 import requests
 from io import BytesIO
@@ -7,17 +7,25 @@ from flask_cors import CORS
 app = Flask(__name__)
 CORS(app)
 
-@app.route('/music-taste/result', methods=['GET'])
+
+@app.route('/recommendationCollage', methods=['POST'])
+def upload_image_link():
+    data = request.json
+    image_links = data.get('imageLinks', [])
+    # Process the image link as needed
+    print(f"Received image link: {image_links}")
+    return 'Image link received successfully'
+
+
+@app.route('/music_collage', methods=['GET'])
 def generate_collage():
-    data = request.get.json()
-    image_links = data.get('image_links', [])
-    # image_links = [
-    #     "https://i.natgeofe.com/n/548467d8-c5f1-4551-9f58-6817a8d2c45e/NationalGeographic_2572187_square.jpg",
-    #     "https://i.natgeofe.com/n/548467d8-c5f1-4551-9f58-6817a8d2c45e/NationalGeographic_2572187_square.jpg",
-    #     "https://i.natgeofe.com/k/ad9b542e-c4a0-4d0b-9147-da17121b4c98/MOmeow1_square.png",
-    #     "https://i.natgeofe.com/k/ad9b542e-c4a0-4d0b-9147-da17121b4c98/MOmeow1_square.png",
-    #     "https://i.natgeofe.com/k/ad9b542e-c4a0-4d0b-9147-da17121b4c98/MOmeow1_square.png"
-    # ]
+    image_links = [
+        "https://i.natgeofe.com/n/548467d8-c5f1-4551-9f58-6817a8d2c45e/NationalGeographic_2572187_square.jpg",
+        "https://i.natgeofe.com/n/548467d8-c5f1-4551-9f58-6817a8d2c45e/NationalGeographic_2572187_square.jpg",
+        "https://i.natgeofe.com/k/ad9b542e-c4a0-4d0b-9147-da17121b4c98/MOmeow1_square.png",
+        "https://i.natgeofe.com/k/ad9b542e-c4a0-4d0b-9147-da17121b4c98/MOmeow1_square.png",
+        "https://i.natgeofe.com/k/ad9b542e-c4a0-4d0b-9147-da17121b4c98/MOmeow1_square.png"
+    ]
 
     collage_width = 600
     collage_height = 400
@@ -51,4 +59,4 @@ def generate_collage():
 
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    app.run(debug=True)
