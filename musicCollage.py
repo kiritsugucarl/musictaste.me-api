@@ -1,54 +1,69 @@
-from flask import Flask, request, send_file
+from flask import Flask, request, send_file, jsonify
 from PIL import Image
-import requests
 from io import BytesIO
 from flask_cors import CORS
+import requests
+import logging
+import base64
+
+logging.basicConfig(level=logging.DEBUG)
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, origin="*")
 
-@app.route('/music-taste/result', methods=['GET'])
-def generate_collage():
-    data = request.get.json()
-    image_links = data.get('image_links', [])
-    # image_links = [
-    #     "https://i.natgeofe.com/n/548467d8-c5f1-4551-9f58-6817a8d2c45e/NationalGeographic_2572187_square.jpg",
-    #     "https://i.natgeofe.com/n/548467d8-c5f1-4551-9f58-6817a8d2c45e/NationalGeographic_2572187_square.jpg",
-    #     "https://i.natgeofe.com/k/ad9b542e-c4a0-4d0b-9147-da17121b4c98/MOmeow1_square.png",
-    #     "https://i.natgeofe.com/k/ad9b542e-c4a0-4d0b-9147-da17121b4c98/MOmeow1_square.png",
-    #     "https://i.natgeofe.com/k/ad9b542e-c4a0-4d0b-9147-da17121b4c98/MOmeow1_square.png"
-    # ]
 
-    collage_width = 600
-    collage_height = 400
+@app.route('/recommendationCollage', methods=['POST'])
+def generate_and_send_collage():
+    data = request.json
+    image_links = data.get('imageLinks', [])
+    
+    app.logger.debug(f"Received image links: {image_links}")
+    
+    # Generate collage
+    collage = generate_collage(image_links)
+    
+    collage_data = BytesIO()
+    collage.save(collage_data, format='JPEG')
+    collage_data.seek(0)
+    
+    collage_base64 = base64.b64encode(collage_data.read()).decode('utf-8')
+    
+    return jsonify({'collage' : collage_base64})
+
+    
+def generate_collage(image_links):
+    collage_width = 1080
+    collage_height = 1920
     collage = Image.new("RGB", (collage_width, collage_height))
-
-    cell_width = collage_width // 3
-    cell_height = collage_height // 2
-
-    cell_coordinates = [
-        (0, 0),  # topleft
-        (cell_width, 0),  # topright
-        (2 * cell_width, 0),  # topright
-        (0, cell_height),  # middleleft
-        (cell_width, cell_height),  # middleright
-        (2 * cell_width, cell_height)  # middleright
-    ]
-
+    
+    num_rows = 5
+    num_cols = 2
+    
+    cell_width = collage_width // num_cols
+    cell_height = collage_height // num_rows
+    
+    cell_coordinates = []
+    
+    for row in range(num_rows):
+        for col in range(num_cols):
+            x_offset = col * cell_width
+            y_offset = row * cell_height
+            cell_coordinates.append((x_offset, y_offset))
+            
     for link, (x_offset, y_offset) in zip(image_links, cell_coordinates):
         response = requests.get(link)
         if response.status_code == 200:
             image_data = BytesIO(response.content)
-            img = Image.open(image_data)
+            img = Image.open(image_data).convert("RGB")
+            # Wait for the image to be fully loaded
+            img.load()
 
             img = img.resize((cell_width, cell_height))
 
             collage.paste(img, (x_offset, y_offset))
-
-    collage.save("2x2_image_collage.jpg")
-
-    return send_file("2x2_image_collage.jpg", mimetype='image/jpg')
+            
+    return collage
 
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    app.run(debug=True)
