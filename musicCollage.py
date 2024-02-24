@@ -4,6 +4,7 @@ from io import BytesIO
 from flask_cors import CORS
 import requests
 import logging
+import base64
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -21,18 +22,14 @@ def generate_and_send_collage():
     # Generate collage
     collage = generate_collage(image_links)
     
+    collage_data = BytesIO()
+    collage.save(collage_data, format='JPEG')
+    collage_data.seek(0)
     
-    temp_file = 'temp/collage.jpg'
-    collage.save(temp_file, format='JPEG')
+    collage_base64 = base64.b64encode(collage_data.read()).decode('utf-8')
     
-    app.logger.debug("Collage saved successfully")
-    
-    return send_file(
-        temp_file,
-        mimetype='image/jpeg',
-        as_attachment=True,
-        download_name="recommendation.jpg"
-    )
+    return jsonify({'collage' : collage_base64})
+
     
 def generate_collage(image_links):
     collage_width = 1080
@@ -58,6 +55,8 @@ def generate_collage(image_links):
         if response.status_code == 200:
             image_data = BytesIO(response.content)
             img = Image.open(image_data).convert("RGB")
+            # Wait for the image to be fully loaded
+            img.load()
 
             img = img.resize((cell_width, cell_height))
 
