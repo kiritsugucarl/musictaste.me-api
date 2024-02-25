@@ -22,7 +22,6 @@ sp = Spotify(auth_manager=SpotifyClientCredentials(client_id=SPOTIFY_CLIENT_ID, 
 def generate_and_send_collage():
     data = request.json
     track_ids = data.get('trackIds', [])
-    # image_links = data.get('imageLinks', [])
     
     app.logger.debug(f"Received track IDS: {track_ids}")
     # app.logger.debug(f"Received image links: {image_links}")
@@ -73,9 +72,13 @@ def generate_collage(tracks_info):
     
     cell_coordinates = []
     
-    collage = Image.new('RGB', (collage_width, collage_height), "#45a083")
+    collage = Image.new('RGB', (collage_width, collage_height), "#000000")
     
     draw = ImageDraw.Draw(collage)
+    
+    border_color = "#000000"  # Color of the borders
+    border_width = 5  # Width of the borders
+    image_spacing = 10  # Space between images
     
     for row in range(num_rows_total):
         for col in range(num_cols):
@@ -86,6 +89,13 @@ def generate_collage(tracks_info):
     for (track_info, (x_offset, y_offset)) in zip(tracks_info, cell_coordinates):
         print(track_info)
         print(f"Artist debug: {track_info['artist']}")
+        
+        # Draw rectangle (border) around each image
+        draw.rectangle(
+            [x_offset, y_offset, x_offset + cell_width, y_offset + cell_height],
+            outline=border_color,
+            width=border_width
+        )
         
         # Check if 'album' key is present in track_info
         image_url = track_info['image']
@@ -98,9 +108,9 @@ def generate_collage(tracks_info):
             # Wait for the image to be fully loaded
             img.load()
 
-            img = img.resize((cell_width, cell_height))
+            img = img.resize((cell_width - 2 * border_width, cell_height - 2 * border_width))
 
-            collage.paste(img, (x_offset, y_offset))
+            collage.paste(img, (x_offset + border_width + image_spacing, y_offset + border_width))
             
         if 'artist' in track_info:
             artist_name = track_info['artist']
@@ -109,36 +119,31 @@ def generate_collage(tracks_info):
             
         trackNameText = f"{track_info['name']} - {artist_name}"
         
-        font_size = 20
+        font_size = 25
         font = ImageFont.truetype("font/MuseoModerno-Bold.ttf", font_size)
 
         text_width = draw.textlength(trackNameText, font=font)
         text_height = font.getbbox(trackNameText)[3] - font.getbbox(trackNameText)[1]  # Calculate height using bottom and top coordinates
-        text_padding_x = 0
-        text_padding_y = 5
-        text_position = (x_offset + (cell_width - text_width) / 2, y_offset + cell_height - text_height - text_padding_y)
+        text_padding_x = 5
+        text_padding_y = 30
         
-        background_color = "#45a083"
-        text_color = "#232931"
-        background_coords = [
-            x_offset + text_padding_x,                   # Left coordinate
-            text_position[1],                           # Top coordinate
-            x_offset + cell_width - text_padding_x,     # Right coordinate
-            text_position[1] + text_height + text_padding_y  # Bottom coordinate
-        ]
-        draw.rectangle(background_coords, fill=background_color)
+        text_color = "#f1f1f1"
+        text_position = (
+            x_offset + text_padding_x + (cell_width - text_width - 2 * text_padding_x) / 2,
+            y_offset + cell_height - text_padding_y - text_height
+        )
         draw.text(text_position, trackNameText, fill=text_color, font=font)
         
-        watermark_font_size = 40
-        watermark_font = ImageFont.truetype("font/MuseoModerno-Bold.ttf", watermark_font_size)     
+        # watermark_font_size = 40
+        # watermark_font = ImageFont.truetype("font/MuseoModerno-Bold.ttf", watermark_font_size)     
             
-        watermark_text = "Produced by musictaste.me"
-        watermark_y_offset = num_rows_content * cell_height
+        # watermark_text = "Produced by musictaste.me"
+        # watermark_y_offset = num_rows_content * cell_height
         
-        watermark_text_width = draw.textlength(watermark_text, font=watermark_font)
-        watermark_text_height = font.getbbox(watermark_text)[3]  - font.getbbox(watermark_text)[1]
-        watermark_x_offset = (collage_width - watermark_text_width) // 2
-        draw.text((watermark_x_offset, watermark_y_offset), watermark_text, font=watermark_font, fill="#232931")
+        # watermark_text_width = draw.textlength(watermark_text, font=watermark_font)
+        # watermark_text_height = font.getbbox(watermark_text)[3]  - font.getbbox(watermark_text)[1]
+        # watermark_x_offset = (collage_width - watermark_text_width) // 2
+        # draw.text((watermark_x_offset, watermark_y_offset), watermark_text, font=watermark_font, fill="#f1f1f1")
             
     return collage
 
